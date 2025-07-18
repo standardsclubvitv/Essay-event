@@ -4,7 +4,11 @@ const path = require('path');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+
+// Enhanced logging for debugging
+console.log('Starting Express server...');
+console.log('Environment:', process.env.NODE_ENV);
+console.log('Vercel environment:', process.env.VERCEL);
 
 // Middleware
 app.use(cors({
@@ -29,25 +33,27 @@ app.use((req, res, next) => {
     next();
 });
 
-// Static file serving with caching
-app.use(express.static(path.join(__dirname, 'public'), {
-    maxAge: process.env.NODE_ENV === 'production' ? '1d' : '0',
-    etag: true,
-    lastModified: true
-}));
+// Request logging middleware
+app.use((req, res, next) => {
+    console.log(`${req.method} ${req.path} - ${new Date().toISOString()}`);
+    next();
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
+    console.log('Health check endpoint called');
     res.status(200).json({ 
         status: 'OK', 
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
-        uptime: process.uptime()
+        uptime: process.uptime(),
+        path: req.path
     });
 });
 
 // API endpoint to get Firebase config
 app.get('/api/config', (req, res) => {
+    console.log('Config endpoint called');
     try {
         const config = {
             apiKey: process.env.FIREBASE_API_KEY || "AIzaSyCrVQyQBJcf5ilOjg-X1_rjTUvhvLVDqEY",
@@ -59,17 +65,18 @@ app.get('/api/config', (req, res) => {
             measurementId: process.env.FIREBASE_MEASUREMENT_ID || "G-CEPW7QBLJG"
         };
         
-        // Cache the config for 1 hour
+        console.log('Config prepared successfully');
         res.setHeader('Cache-Control', 'public, max-age=3600');
         res.json(config);
     } catch (error) {
         console.error('Error serving Firebase config:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 });
 
-// API endpoint for essay statistics (optional)
+// API endpoint for essay statistics
 app.get('/api/stats', (req, res) => {
+    console.log('Stats endpoint called');
     try {
         const stats = {
             totalTopics: 11,
@@ -86,76 +93,79 @@ app.get('/api/stats', (req, res) => {
         res.json(stats);
     } catch (error) {
         console.error('Error serving stats:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 });
 
-// Route handlers for main pages
+// Serve HTML content directly (instead of trying to serve files)
 app.get('/', (req, res) => {
-    try {
-        res.sendFile(path.join(__dirname, 'public', 'index.html'));
-    } catch (error) {
-        console.error('Error serving index.html:', error);
-        res.status(500).send('Internal server error');
-    }
+    console.log('Root endpoint called');
+    res.redirect('/index.html');
 });
 
 app.get('/login', (req, res) => {
-    try {
-        res.sendFile(path.join(__dirname, 'public', 'login.html'));
-    } catch (error) {
-        console.error('Error serving login.html:', error);
-        res.status(500).send('Internal server error');
-    }
+    console.log('Login endpoint called');
+    res.redirect('/login.html');
 });
 
 app.get('/dashboard', (req, res) => {
-    try {
-        res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
-    } catch (error) {
-        console.error('Error serving dashboard.html:', error);
-        res.status(500).send('Internal server error');
-    }
+    console.log('Dashboard endpoint called');
+    res.redirect('/dashboard.html');
 });
 
-// Catch-all handler for SPA routing
+// For any other routes, redirect to the static files
 app.get('*', (req, res) => {
-    try {
-        // Don't serve index.html for API routes
-        if (req.path.startsWith('/api/')) {
-            return res.status(404).json({ error: 'API endpoint not found' });
-        }
-        
-        // Serve index.html for all other routes (SPA support)
-        res.sendFile(path.join(__dirname, 'public', 'index.html'));
-    } catch (error) {
-        console.error('Error in catch-all handler:', error);
-        res.status(500).send('Internal server error');
+    console.log('Catch-all handler called for:', req.path);
+    
+    // Handle API routes
+    if (req.path.startsWith('/api/')) {
+        console.log('API route not found:', req.path);
+        return res.status(404).json({ error: 'API endpoint not found' });
     }
+    
+    // For static files, let Vercel handle them
+    res.status(200).send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Redirecting...</title>
+        </head>
+        <body>
+            <script>
+                // Redirect to the correct static file
+                window.location.href = '${req.path}';
+            </script>
+        </body>
+        </html>
+    `);
 });
 
-// Global error handler
+// Enhanced error handler
 app.use((error, req, res, next) => {
     console.error('Unhandled error:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Request path:', req.path);
+    console.error('Request method:', req.method);
+    
     res.status(500).json({ 
         error: 'Internal server error',
-        message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
+        message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong',
+        timestamp: new Date().toISOString(),
+        path: req.path
     });
 });
 
-// Handle 404 errors
+// 404 handler
 app.use((req, res) => {
-    res.status(404).json({ error: 'Resource not found' });
+    console.log('404 handler called for:', req.path);
+    res.status(404).json({ 
+        error: 'Resource not found',
+        path: req.path,
+        timestamp: new Date().toISOString()
+    });
 });
 
-// Start server only if not in Vercel environment
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-    app.listen(PORT, () => {
-        console.log(`🚀 Server running on http://localhost:${PORT}`);
-        console.log(`📝 Standards Club VIT Vellore Essay Platform`);
-        console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    });
-}
+console.log('Express app configured successfully');
 
 // Export for Vercel
 module.exports = app;
