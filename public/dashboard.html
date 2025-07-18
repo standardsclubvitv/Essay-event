@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Essay Platform</title>
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+    <div class="loading-screen" id="loadingScreen">
+        <div class="spinner"></div>
+        <p>Loading your dashboard...</p>
+    </div>
+
+    <div class="dashboard-container" id="dashboardContainer" style="display: none;">
+        <header class="dashboard-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <div class="logo-section">
+                        <img src="https://standardsclubvitv.github.io/Standards-Club-VITv/image/logo_club.png" alt="Standards Club VIT Vellore" class="club-logo">
+                        <div class="title-section">
+                            <h1>Essay Dashboard</h1>
+                            <span class="subtitle">Standards Club VIT Vellore</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="user-info">
+                    <span id="userName">User</span>
+                    <button id="logoutBtn" class="logout-btn">Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="dashboard-main">
+            <div class="topics-section">
+                <h2>Select an Essay Topic</h2>
+                <p class="section-description">Choose from the following topics related to BIS (Bureau of Indian Standards):</p>
+                
+                <div class="topics-grid" id="topicsGrid">
+                    <!-- Topics will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="essay-section" id="essaySection" style="display: none;">
+                <div class="essay-header">
+                    <h3 id="selectedTopicTitle"></h3>
+                    <div class="essay-actions">
+                        <button id="saveEssayBtn" class="save-btn">Save Draft</button>
+                        <button id="submitEssayBtn" class="submit-btn">Submit Essay</button>
+                        <button id="backToTopicsBtn" class="back-btn">← Back to Topics</button>
+                    </div>
+                </div>
+                
+                <div class="essay-editor">
+                    <textarea id="essayTextarea" placeholder="Start writing your essay here..."></textarea>
+                    <div class="word-count">
+                        <span id="wordCount">0</span> words
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="success-icon">✅</span>
+                <h2>Essay Submitted Successfully!</h2>
+            </div>
+            <div class="modal-body">
+                <p id="submissionDetails"></p>
+                <div class="submission-info">
+                    <div class="info-item">
+                        <strong>Topic:</strong> <span id="submittedTopic"></span>
+                    </div>
+                    <div class="info-item">
+                        <strong>Word Count:</strong> <span id="submittedWordCount"></span> words
+                    </div>
+                    <div class="info-item">
+                        <strong>Submitted At:</strong> <span id="submissionTime"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="closeModal" class="close-btn">Continue Writing</button>
+                <button id="viewAllEssays" class="view-btn">View All Essays</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="dashboard.js"></script>
+    <style>
+        /* Header Logo Styles */
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 80px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+}
+
+.logo-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.club-logo {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    background: white;
+    padding: 4px;
+}
+
+.title-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.title-section h1 {
+    color: #2c3e50;
+    font-size: 1.8rem;
+    margin: 0;
+    font-weight: 600;
+}
+
+.subtitle {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+.dashboard-header {
+    background: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    padding: 1rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-shrink: 0;
+}
+
+.user-info span {
+    font-weight: 500;
+    color: #666;
+    white-space: nowrap;
+}
+
+.logout-btn {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.3s;
+    white-space: nowrap;
+}
+
+.logout-btn:hover {
+    background: #c0392b;
+}
+
+/* Responsive Design for Header */
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+        padding: 1rem;
+    }
+    
+    .logo-section {
+        justify-content: center;
+    }
+    
+    .club-logo {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .title-section h1 {
+        font-size: 1.5rem;
+    }
+    
+    .subtitle {
+        font-size: 0.8rem;
+    }
+    
+    .user-info {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-content {
+        padding: 0.5rem;
+    }
+    
+    .logo-section {
+        gap: 0.75rem;
+    }
+    
+    .club-logo {
+        width: 45px;
+        height: 45px;
+    }
+    
+    .title-section h1 {
+        font-size: 1.3rem;
+    }
+    
+    .user-info {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
+    </style>
+</body>
+</html>
